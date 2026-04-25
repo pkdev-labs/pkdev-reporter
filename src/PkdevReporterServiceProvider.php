@@ -30,6 +30,7 @@ class PkdevReporterServiceProvider extends ServiceProvider
             Commands\InstallCommand::class,
             Commands\ReportCommand::class,
             Commands\PingCommand::class,
+            Commands\TestCommand::class,
         ]);
 
         if (config('pkdev-reporter.features.cron', true)) {
