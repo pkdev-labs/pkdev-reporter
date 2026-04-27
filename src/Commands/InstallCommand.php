@@ -88,6 +88,20 @@ class InstallCommand extends Command
             $this->line('  Add the scheduler to your crontab if not already running:');
             $this->line('  <fg=yellow>* * * * * cd '.base_path().' && php artisan schedule:run >> /dev/null 2>&1</>');
             $this->line('');
+
+            if ($this->confirm('Do you use Deployer for deployments?', false)) {
+                $recipePath = 'vendor/pkdev/reporter/deployer/pkdev.php';
+                $this->line('  Add this to your <fg=yellow>deploy.php</>:');
+                $this->line('');
+                $this->line("  <fg=cyan>require '{$recipePath}';</>");
+                $this->line('');
+                $this->line('  The recipe reads PKDEV_API_URL and PKDEV_SITE_KEY from your .env automatically.');
+                $this->line('  To override per-deploy, add before the require:');
+                $this->line('  <fg=cyan>set(\'pkdev_api_url\', \''.$apiUrl.'\');</>');
+                $this->line('  <fg=cyan>set(\'pkdev_site_key\', \'<your-site-key>\');  // use the value from your .env</>');
+                $this->line('');
+            }
+
             return self::SUCCESS;
         }
 
@@ -122,6 +136,6 @@ class InstallCommand extends Command
             }
         }
 
-        file_put_contents($envPath, $contents);
+        file_put_contents($envPath, $contents, LOCK_EX);
     }
 }

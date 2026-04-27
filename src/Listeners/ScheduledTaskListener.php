@@ -5,6 +5,7 @@ namespace Pkdev\Reporter\Listeners;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Pkdev\Reporter\Http\PkdevClient;
+use Pkdev\Reporter\Support\Redactor;
 
 class ScheduledTaskListener
 {
@@ -39,7 +40,7 @@ class ScheduledTaskListener
                 'status'            => 'failed',
                 'exit_code'         => 1,
                 'duration_ms'       => null,
-                'exception_message' => $event->exception?->getMessage(),
+                'exception_message' => $event->exception ? Redactor::clean($event->exception->getMessage()) : null,
                 'fired_at'          => now()->toIso8601String(),
             ]);
         } catch (\Throwable) {
@@ -56,7 +57,7 @@ class ScheduledTaskListener
             return 'artisan '.$m[1];
         }
 
-        return mb_substr($summary, 0, 255);
+        return mb_substr(Redactor::clean($summary), 0, 255);
     }
 
     private function shouldReport(): bool

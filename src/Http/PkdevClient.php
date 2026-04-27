@@ -32,9 +32,15 @@ class PkdevClient
         $retries = config('pkdev-reporter.http_retries', 2);
         $delay   = config('pkdev-reporter.http_retry_delay_ms', 500);
 
+        $body      = json_encode($payload, JSON_THROW_ON_ERROR);
+        $signature = 'sha256='.hash_hmac('sha256', $body, $this->signingKey());
+
         for ($attempt = 0; $attempt <= $retries; $attempt++) {
             try {
-                $response = $this->http->post($endpoint, ['json' => $payload]);
+                $response = $this->http->post($endpoint, [
+                    'body'    => $body,
+                    'headers' => ['X-PKDev-Signature' => $signature],
+                ]);
 
                 return $response->getStatusCode() >= 200 && $response->getStatusCode() < 300;
             } catch (GuzzleException $e) {
@@ -51,5 +57,10 @@ class PkdevClient
         }
 
         return false;
+    }
+
+    private function signingKey(): string
+    {
+        return hash('sha256', (string) config('pkdev-reporter.site_key'));
     }
 }

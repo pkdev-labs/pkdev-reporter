@@ -66,23 +66,32 @@ function pkdev_notify(string $status): void
         $commitMessage = null;
     }
 
+    if (!str_starts_with(rtrim($apiUrl, '/'), 'https://')) {
+        return;
+    }
+
     try {
-        $client = new Client(['timeout' => 5]);
+        $body = json_encode([
+            'branch'         => get('branch', 'main'),
+            'commit'         => $commit ?: null,
+            'commit_message' => $commitMessage ?: null,
+            'deployer'       => get('local_user', null),
+            'environment'    => get('labels/stage', get('stage', 'production')),
+            'status'         => $status,
+            'duration_ms'    => $durationMs,
+            'deployed_at'    => date('c'),
+        ], JSON_THROW_ON_ERROR);
+
+        $signature = 'sha256='.hash_hmac('sha256', $body, hash('sha256', $siteKey));
+
+        $client = new Client(['timeout' => 5, 'verify' => true]);
         $client->post(rtrim($apiUrl, '/').'/api/v1/deployment', [
+            'body'    => $body,
             'headers' => [
-                'Authorization' => 'Bearer '.$siteKey,
-                'Accept'        => 'application/json',
-                'Content-Type'  => 'application/json',
-            ],
-            'json' => [
-                'branch'         => get('branch', 'main'),
-                'commit'         => $commit ?: null,
-                'commit_message' => $commitMessage ?: null,
-                'deployer'       => get('local_user', null),
-                'environment'    => get('labels/stage', get('stage', 'production')),
-                'status'         => $status,
-                'duration_ms'    => $durationMs,
-                'deployed_at'    => date('c'),
+                'Authorization'     => 'Bearer '.$siteKey,
+                'Accept'            => 'application/json',
+                'Content-Type'      => 'application/json',
+                'X-PKDev-Signature' => $signature,
             ],
         ]);
     } catch (\Throwable) {
