@@ -59,6 +59,16 @@ class PkdevClient
         return false;
     }
 
+    public function ping(): bool
+    {
+        return $this->post('/api/v1/heartbeat', [
+            'reported_at' => now()->toIso8601String(),
+            'environment' => config('app.env'),
+            'queues'      => [],
+            'horizon'     => null,
+        ]);
+    }
+
     private function signingKey(): string
     {
         return hash('sha256', (string) config('pkdev-reporter.site_key'));
