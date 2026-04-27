@@ -1,6 +1,5 @@
 {
     "name": "pkdev/reporter",
-    "version": "1.0.0",
     "description": "Reports site telemetry (heartbeats, queues, crons, exceptions, deployments) to the PKDev control plane.",
     "type": "library",
     "license": "proprietary",
