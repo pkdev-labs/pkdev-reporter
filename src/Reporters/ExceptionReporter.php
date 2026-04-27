@@ -4,6 +4,7 @@ namespace Pkdev\Reporter\Reporters;
 
 use Illuminate\Support\Facades\Cache;
 use Pkdev\Reporter\Http\PkdevClient;
+use Pkdev\Reporter\Support\Redactor;
 
 class ExceptionReporter
 {
@@ -15,8 +16,13 @@ class ExceptionReporter
             return;
         }
 
-        // Suppress duplicate reports of the same exception for 60 seconds
-        $key = 'pkdev:exc:'.md5(get_class($exception).$exception->getFile().$exception->getLine());
+        // Don't report exceptions thrown by this package — would cause infinite loops
+        if (str_starts_with(get_class($exception), 'Pkdev\\Reporter\\')) {
+            return;
+        }
+
+        // Suppress duplicate reports of the same exception for 60 seconds, scoped to this app
+        $key = 'pkdev:exc:'.md5(config('app.name').get_class($exception).$exception->getFile().$exception->getLine());
         if (Cache::has($key)) {
             return;
         }
@@ -25,10 +31,10 @@ class ExceptionReporter
         try {
             $this->client->post('/api/v1/exception', [
                 'class'       => get_class($exception),
-                'message'     => $exception->getMessage(),
+                'message'     => Redactor::clean($exception->getMessage()),
                 'file'        => $exception->getFile(),
                 'line'        => $exception->getLine(),
-                'trace'       => mb_substr($exception->getTraceAsString(), 0, 5000),
+                'trace'       => Redactor::clean(mb_substr($exception->getTraceAsString(), 0, 5000)),
                 'occurred_at' => now()->toIso8601String(),
             ]);
         } catch (\Throwable) {

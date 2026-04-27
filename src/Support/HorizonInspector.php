@@ -12,10 +12,8 @@ class HorizonInspector
         if (!class_exists(\Laravel\Horizon\Horizon::class)) { return null; }
 
         try {
-            $masterSupervisor = app(\Laravel\Horizon\MasterSupervisor::class);
-
             return [
-                'status'    => \Laravel\Horizon\Contracts\MasterSupervisorRepository::class
+                'status'    => app()->bound(\Laravel\Horizon\Contracts\MasterSupervisorRepository::class)
                     ? $this->horizonStatus()
                     : 'unknown',
                 'processes' => $this->horizonProcessCount(),
