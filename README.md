@@ -15,24 +15,57 @@ Telemetry reporter for [PKDev](https://app.pkdev.dev) — sends heartbeats, queu
 
 ## Installation
 
-### 1. Add the VCS repository to `composer.json`
+### 1. Authenticate with GitHub
+
+This is a private package. You need a GitHub personal access token with at least **Contents: read** access on `pkdev-labs/pkdev-reporter`. You can create one at GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens.
+
+Store it in Composer's global auth file (one-time per machine):
+
+```bash
+composer config -g github-oauth.github.com YOUR_GITHUB_PAT
+```
+
+This writes to `~/.config/composer/auth.json` and Composer will use it automatically for all `github.com` packages from then on.
+
+**For GitHub Actions CI**, add a repository secret named `COMPOSER_AUTH` with this value (same token):
+
+```json
+{"github-oauth":{"github.com":"YOUR_GITHUB_PAT"}}
+```
+
+Then reference it in your workflow:
+
+```yaml
+- name: Install Composer dependencies
+  env:
+    COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+  run: composer install --prefer-dist --no-progress --optimize-autoloader --ignore-platform-reqs
+```
+
+### 2. Add the repository to `composer.json`
+
+```bash
+composer config repositories.pkdev/reporter vcs https://github.com/pkdev-labs/pkdev-reporter
+```
+
+Or add it manually:
 
 ```json
 "repositories": [
     {
         "type": "vcs",
-        "url": "git@github.com:pkdev-labs/pkdev-reporter.git"
+        "url": "https://github.com/pkdev-labs/pkdev-reporter.git"
     }
 ]
 ```
 
-### 2. Require the package
+### 3. Require the package
 
 ```bash
 composer require pkdev/reporter
 ```
 
-### 3. Run the interactive installer
+### 4. Run the interactive installer
 
 ```bash
 php artisan pkdev:install
