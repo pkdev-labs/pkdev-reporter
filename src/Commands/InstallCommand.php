@@ -74,7 +74,7 @@ class InstallCommand extends Command
         $client = new PkdevClient();
 
         $ok = $client->post('/api/v1/heartbeat', [
-            'reported_at' => now()->toIso8601String(),
+            'reported_at' => now()->utc()->toIso8601String(),
             'environment' => config('app.env'),
             'queues'      => [],
             'horizon'     => null,
