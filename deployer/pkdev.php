@@ -7,29 +7,17 @@
  *
  *   require 'vendor/pkdev/reporter/deployer/pkdev.php';
  *
- * Configure via environment variables or Deployer set():
- *   PKDEV_API_URL  — your PKDev hub URL (e.g. https://app.pkdev.dev)
- *   PKDEV_SITE_KEY — site API key from the PKDev ops panel
- *
- * Or in deploy.php:
- *   set('pkdev_api_url',  'https://app.pkdev.dev');
- *   set('pkdev_site_key', 'pk_...');
+ * Credentials are read from the server's .env (PKDEV_API_URL, PKDEV_SITE_KEY).
+ * No secrets needed in CI — the artisan command runs on the server.
  */
 
 namespace Deployer;
 
-use GuzzleHttp\Client;
-
-set('pkdev_api_url',  getenv('PKDEV_API_URL') ?: null);
-set('pkdev_site_key', getenv('PKDEV_SITE_KEY') ?: null);
 set('pkdev_start_time', null);
 
-// Record deploy start time
 before('deploy', 'pkdev:start');
-
-// Notify on success or failure
 after('deploy:success', 'pkdev:success');
-after('deploy:failed',  'pkdev:failed');
+after('deploy:failed', 'pkdev:failed');
 
 desc('Record PKDev deployment start time');
 task('pkdev:start', function (): void {
@@ -48,13 +36,6 @@ task('pkdev:failed', function (): void {
 
 function pkdev_notify(string $status): void
 {
-    $apiUrl  = get('pkdev_api_url');
-    $siteKey = get('pkdev_site_key');
-
-    if (!$apiUrl || !$siteKey) {
-        return;
-    }
-
     $start      = get('pkdev_start_time');
     $durationMs = $start ? (int) round((microtime(true) - $start) * 1000) : null;
 
@@ -66,34 +47,18 @@ function pkdev_notify(string $status): void
         $commitMessage = null;
     }
 
-    if (!str_starts_with(rtrim($apiUrl, '/'), 'https://')) {
-        return;
-    }
+    $args = implode(' ', array_filter([
+        '--status='.escapeshellarg($status),
+        '--branch='.escapeshellarg(get('branch', 'main')),
+        $commit        ? '--commit='.escapeshellarg(trim($commit))        : '',
+        $commitMessage ? '--commit-message='.escapeshellarg(trim($commitMessage)) : '',
+        '--deployer='.escapeshellarg((string) get('local_user', '')),
+        '--environment='.escapeshellarg((string) get('labels/stage', get('stage', 'production'))),
+        $durationMs !== null ? '--duration-ms='.escapeshellarg((string) $durationMs) : '',
+    ]));
 
     try {
-        $body = json_encode([
-            'branch'         => get('branch', 'main'),
-            'commit'         => $commit ?: null,
-            'commit_message' => $commitMessage ?: null,
-            'deployer'       => get('local_user', null),
-            'environment'    => get('labels/stage', get('stage', 'production')),
-            'status'         => $status,
-            'duration_ms'    => $durationMs,
-            'deployed_at'    => date('c'),
-        ], JSON_THROW_ON_ERROR);
-
-        $signature = 'sha256='.hash_hmac('sha256', $body, hash('sha256', $siteKey));
-
-        $client = new Client(['timeout' => 5, 'verify' => true]);
-        $client->post(rtrim($apiUrl, '/').'/api/v1/deployment', [
-            'body'    => $body,
-            'headers' => [
-                'Authorization'     => 'Bearer '.$siteKey,
-                'Accept'            => 'application/json',
-                'Content-Type'      => 'application/json',
-                'X-PKDev-Signature' => $signature,
-            ],
-        ]);
+        run("cd {{release_or_current_path}} && php artisan pkdev:notify-deployment $args");
     } catch (\Throwable) {
         // Never fail a deployment because of PKDev reporting
     }
