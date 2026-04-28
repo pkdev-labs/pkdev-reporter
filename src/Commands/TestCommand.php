@@ -30,7 +30,7 @@ class TestCommand extends Command
 
         $checks = [
             'Heartbeat'        => fn () => $client->post('/api/v1/heartbeat', [
-                'reported_at' => now()->toIso8601String(),
+                'reported_at' => now()->utc()->toIso8601String(),
                 'environment' => config('app.env'),
                 'queues'      => [],
                 'horizon'     => null,
@@ -40,7 +40,7 @@ class TestCommand extends Command
                 'status'       => 'success',
                 'exit_code'    => 0,
                 'duration_ms'  => 1,
-                'fired_at'     => now()->toIso8601String(),
+                'fired_at'     => now()->utc()->toIso8601String(),
             ]),
             'Exception report' => fn () => $client->post('/api/v1/exception', [
                 'class'       => 'Pkdev\Reporter\TestException',
@@ -48,7 +48,7 @@ class TestCommand extends Command
                 'file'        => 'pkdev:test',
                 'line'        => 0,
                 'trace'       => null,
-                'occurred_at' => now()->toIso8601String(),
+                'occurred_at' => now()->utc()->toIso8601String(),
             ]),
             'Deployment'       => fn () => $client->post('/api/v1/deployment', [
                 'branch'         => 'test',
@@ -58,7 +58,7 @@ class TestCommand extends Command
                 'environment'    => config('app.env'),
                 'status'         => 'completed',
                 'duration_ms'    => 1,
-                'deployed_at'    => now()->toIso8601String(),
+                'deployed_at'    => now()->utc()->toIso8601String(),
             ]),
         ];
 
