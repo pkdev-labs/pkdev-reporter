@@ -35,7 +35,7 @@ class ExceptionReporter
                 'file'        => $exception->getFile(),
                 'line'        => $exception->getLine(),
                 'trace'       => Redactor::clean(mb_substr($exception->getTraceAsString(), 0, 5000)),
-                'occurred_at' => now()->toIso8601String(),
+                'occurred_at' => now()->utc()->toIso8601String(),
             ]);
         } catch (\Throwable) {
             // Never break the host app

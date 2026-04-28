@@ -21,7 +21,7 @@ class ScheduledTaskListener
                 'status'       => 'success',
                 'exit_code'    => 0,
                 'duration_ms'  => (int) round($event->runtime * 1000),
-                'fired_at'     => now()->toIso8601String(),
+                'fired_at'     => now()->utc()->toIso8601String(),
             ]);
         } catch (\Throwable) {
             // Never break the host app
@@ -41,7 +41,7 @@ class ScheduledTaskListener
                 'exit_code'         => 1,
                 'duration_ms'       => null,
                 'exception_message' => $event->exception ? Redactor::clean($event->exception->getMessage()) : null,
-                'fired_at'          => now()->toIso8601String(),
+                'fired_at'          => now()->utc()->toIso8601String(),
             ]);
         } catch (\Throwable) {
             // Never break the host app

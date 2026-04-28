@@ -26,7 +26,7 @@ class HeartbeatReporter
         ));
 
         $payload = [
-            'reported_at' => now()->toIso8601String(),
+            'reported_at' => now()->utc()->toIso8601String(),
             'environment' => config('app.env'),
             'queues'      => array_map(
                 fn (string $queue) => $this->queues->inspect($queue),

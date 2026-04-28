@@ -32,7 +32,7 @@ class NotifyDeploymentCommand extends Command
             'deployer'       => $this->option('deployer') ?: null,
             'environment'    => $this->option('environment') ?: config('app.env'),
             'duration_ms'    => $this->option('duration-ms') ? (int) $this->option('duration-ms') : null,
-            'deployed_at'    => now()->toIso8601String(),
+            'deployed_at'    => now()->utc()->toIso8601String(),
         ]);
 
         return self::SUCCESS;
