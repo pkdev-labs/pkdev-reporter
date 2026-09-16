@@ -4,7 +4,7 @@ This is a CLEAN Composer package. No Filament, no AI integration, no project-spe
 
 ## Read Order
 1. `.ai/guidelines/project-guidelines.md` (AUTHORITATIVE)
-2. `.ai/guidelines/coding-standards.md`
+2. `~/personal/launchpad/standards/php-style.md` (house baseline, loaded by `/prime`)
 3. `README.md` — public install + usage instructions
 
 ## Critical Constraints
