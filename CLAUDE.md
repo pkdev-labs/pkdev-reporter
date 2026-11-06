@@ -13,6 +13,10 @@ This is a CLEAN Composer package. No Filament, no AI integration, no project-spe
 - Zero AI guidelines. Zero AI code. Clean package only.
 - Auto-discovery via `extra.laravel.providers`. Host adds two env vars and the package handles everything else.
 
+**American spelling everywhere:** code names, comments, tests and docs (color, center, gray,
+labeled, normalize). The package has no exceptions today; a Laravel or vendor name we call but
+did not name keeps its own spelling.
+
 ## Dev Setup
 `pkdev` app at `../pkdev` includes this via path repository. Changes here are live instantly (symlinked into Sail at `/var/www/pkdev-reporter`). No `composer update` needed for code changes.
 
