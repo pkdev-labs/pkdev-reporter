@@ -3,8 +3,8 @@
 namespace Pkdev\Reporter\Reporters;
 
 use Pkdev\Reporter\Http\PkdevClient;
-use Pkdev\Reporter\Support\QueueInspector;
 use Pkdev\Reporter\Support\HorizonInspector;
+use Pkdev\Reporter\Support\QueueInspector;
 
 class HeartbeatReporter
 {
@@ -16,25 +16,36 @@ class HeartbeatReporter
 
     public function report(): bool
     {
-        if (!config('pkdev-reporter.features.heartbeat')) {
-            return true;
-        }
+        if (!config('pkdev-reporter.features.heartbeat')) { return true; }
 
+        return $this->client->post('/api/v1/heartbeat', $this->payload());
+    }
+
+    /**
+     * Send the heartbeat and return the hub's status code; null when the feature is off or the hub is unreachable.
+     */
+    public function send(): ?int
+    {
+        if (!config('pkdev-reporter.features.heartbeat')) { return null; }
+
+        return $this->client->send('/api/v1/heartbeat', $this->payload());
+    }
+
+    private function payload(): array
+    {
         $queueNames = array_filter(array_map(
             'trim',
             explode(',', config('pkdev-reporter.queues', 'default'))
         ));
 
-        $payload = [
+        return [
             'reported_at' => now()->utc()->toIso8601String(),
             'environment' => config('app.env'),
-            'queues'      => array_map(
+            'queues' => array_values(array_map(
                 fn (string $queue) => $this->queues->inspect($queue),
                 $queueNames
-            ),
-            'horizon'     => $this->horizon->status(),
+            )),
+            'horizon' => $this->horizon->status(),
         ];
-
-        return $this->client->post('/api/v1/heartbeat', $payload);
     }
 }

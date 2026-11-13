@@ -13,19 +13,17 @@ Telemetry reporter for [PKDev](https://app.pkdev.dev) — sends heartbeats, queu
 
 ## Installation
 
-### 1. Require the package
-
 ```bash
 composer require pkdev/reporter
 ```
 
-### 2. Run the interactive installer
+Then deploy. Nothing goes in `.env`.
 
-```bash
-php artisan pkdev:install
-```
+Within a minute of the deploy, the scheduler runs `pkdev:report`. With no key configured, it generates one, saves it to `storage/app/pkdev-site.key` (with the same group and mode as the site's `.env`), and asks PKDev to enroll the site. The request shows up in the PKDev Ops panel under **Sites → waiting for approval**. Approve it and the next heartbeat lands.
 
-The installer will ask for your PKDev API URL and site key (generated in the PKDev Ops panel under **Sites → Create**), write them to `.env`, publish the config, and send a test heartbeat to confirm connectivity.
+Enrollment is accepted only from a server registered in PKDev, and nothing reports until it is approved. The site needs a running Laravel scheduler (`schedule:run` in cron) and a correct `APP_URL`, which is how PKDev matches it to a site it already probes.
+
+To use a key minted in the Ops panel instead, set `PKDEV_SITE_KEY`; the site then never enrolls. `php artisan pkdev:install` writes it to `.env` for you.
 
 ---
 
@@ -36,7 +34,7 @@ Once installed, the package hooks into your application with zero additional cod
 | Feature | How |
 |---|---|
 | **Heartbeat + queue snapshot** | `pkdev:report` command scheduled every minute via the Laravel scheduler |
-| **Cron monitoring** | Listens to `ScheduledTaskFinished` / `ScheduledTaskFailed` events — every scheduled command is tracked automatically |
+| **Cron monitoring** | Listens to the scheduler's finished, failed and background-finished events — every scheduled command reports one row per run, `success` or `failed`, including background tasks |
 | **Exception reporting** | Hooks into Laravel's exception handler via `reportable()` — unhandled exceptions are reported with class, message, file, line, and trace |
 | **Deployment notifications** | Via the included [Deployer](https://deployer.org) recipe (optional) |
 
@@ -44,12 +42,14 @@ Once installed, the package hooks into your application with zero additional cod
 
 ## Environment variables
 
-| Variable | Required | Description |
+All optional.
+
+| Variable | Default | Description |
 |---|---|---|
-| `PKDEV_ENABLED` | No | Set `false` to silence the package entirely (default: `true`) |
-| `PKDEV_API_URL` | Yes | PKDev hub URL — `https://app.pkdev.dev` in production, `http://host.docker.internal:8090` in Sail |
-| `PKDEV_SITE_KEY` | Yes | Bearer token from the PKDev Ops panel |
-| `PKDEV_QUEUES` | No | Comma-separated queue names to monitor (default: `default`) |
+| `PKDEV_ENABLED` | on when `APP_ENV=production`, off otherwise | Set `true` or `false` to override |
+| `PKDEV_API_URL` | `https://app.pkdev.dev` | PKDev hub URL; `http://host.docker.internal:8090` for a hub in Sail |
+| `PKDEV_SITE_KEY` | unset | A key minted in the Ops panel. Unset, the site generates and enrolls its own |
+| `PKDEV_QUEUES` | `default` | Comma-separated queue names to monitor |
 
 Feature toggles (all default `true`):
 
@@ -69,9 +69,7 @@ If you deploy with [Deployer](https://deployer.org), require the included recipe
 require 'vendor/pkdev/reporter/deployer/pkdev.php';
 ```
 
-The recipe reads `PKDEV_API_URL` and `PKDEV_SITE_KEY` from your server's `.env` automatically. It hooks into `deploy:success` and `deploy:failed` and sends the branch, commit, deployer username, duration, and status to PKDev.
-
-> **Note:** The deployer recipe only fires over HTTPS. HTTP URLs are silently skipped.
+The recipe runs `php artisan pkdev:notify-deployment` on the server, so it uses the site's own key and hub URL. It hooks into `deploy:success` and `deploy:failed` and sends the branch, commit, deployer username, duration, and status to PKDev. It swallows its own failures, so it can never fail a deploy.
 
 ---
 
@@ -79,17 +77,19 @@ The recipe reads `PKDEV_API_URL` and `PKDEV_SITE_KEY` from your server's `.env` 
 
 | Command | Description |
 |---|---|
-| `php artisan pkdev:install` | Interactive setup — writes `.env`, publishes config, tests connectivity |
-| `php artisan pkdev:report` | Manually send a heartbeat + queue snapshot |
+| `php artisan pkdev:install` | Sets up a key minted in the Ops panel — writes `.env`, tests connectivity |
+| `php artisan pkdev:report` | Send a heartbeat + queue snapshot; generates a key and enrolls if there is none |
+| `php artisan pkdev:test` | Send a test payload through every pipeline |
 | `php artisan pkdev:ping` | Send a single connectivity test without writing anything |
 
 ---
 
 ## Local dev (Sail)
 
-If your spoke site runs in Laravel Sail and the PKDev hub also runs in Sail, set:
+The reporter is off outside production. To report from a site in Sail to a PKDev hub in Sail, set:
 
 ```
+PKDEV_ENABLED=true
 PKDEV_API_URL=http://host.docker.internal:8090
 ```
 
@@ -99,4 +99,4 @@ PKDEV_API_URL=http://host.docker.internal:8090
 
 ## Security
 
-Every request is signed with an HMAC body signature (`X-PKDev-Signature: sha256=...`). The hub verifies this before processing any payload. Once all spoke reporters are confirmed live, set `PKDEV_HMAC_REQUIRED=true` in the hub's `.env` to enforce signatures on all inbound requests.
+Every request carries the site key as a bearer token and an HMAC body signature (`X-PKDev-Signature: sha256=...`). The key file is never more readable than the site's `.env`; if the scheduler's user can't give it the `.env` file's group, it falls back to `0644` and logs one warning. Exception and cron messages pass through a redactor that blanks `password=`, `*_KEY=`, bearer tokens and DSN passwords before they leave the site.

@@ -5,6 +5,7 @@ namespace Pkdev\Reporter\Reporters;
 use Illuminate\Support\Facades\Cache;
 use Pkdev\Reporter\Http\PkdevClient;
 use Pkdev\Reporter\Support\Redactor;
+use Pkdev\Reporter\Support\SiteKey;
 
 class ExceptionReporter
 {
@@ -31,7 +32,7 @@ class ExceptionReporter
         try {
             $this->client->post('/api/v1/exception', [
                 'class'       => get_class($exception),
-                'message'     => Redactor::clean($exception->getMessage()),
+                'message'     => mb_strcut(Redactor::clean($exception->getMessage()), 0, 5000),
                 'file'        => $exception->getFile(),
                 'line'        => $exception->getLine(),
                 'trace'       => Redactor::clean(mb_substr($exception->getTraceAsString(), 0, 5000)),
@@ -47,6 +48,6 @@ class ExceptionReporter
         return config('pkdev-reporter.enabled', true)
             && config('pkdev-reporter.features.exceptions', true)
             && !empty(config('pkdev-reporter.api_url'))
-            && !empty(config('pkdev-reporter.site_key'));
+            && SiteKey::current() !== null;
     }
 }
