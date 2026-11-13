@@ -6,12 +6,13 @@ class Redactor
 {
     public static function clean(string $text): string
     {
-        // Key=value patterns (env vars, JSON fields, query strings)
+        $text = preg_replace('/\b(bearer)\s+\S+/i', '$1 [REDACTED]', $text);
+
+        // Key=value patterns (env vars, JSON fields, query strings), matched inside snake_case names
         $text = preg_replace(
-            '/\b(password|passwd|pwd|pass|secret|token|api_key|apikey|access_token|refresh_token|'
-            . 'client_secret|authorization|auth|bearer|credential|private_key|database_url|db_password)'
-            . '[=:\s\'"]+\S+/i',
-            '$1=[REDACTED]',
+            '/\b(\w*(?:pass|pwd|secret|token|credential|authorization|(?:api|access|private|site|app|client|encryption)_?key)\w*)'
+            .'([\'"]?\s*(?:=|:(?!:))\s*[\'"]?)[^\s\'",&)]+/i',
+            '$1$2[REDACTED]',
             $text,
         );
 
@@ -24,7 +25,7 @@ class Redactor
 
         // Shell-style positional password args: -pSECRET or --password=SECRET
         $text = preg_replace(
-            '/(-p)(\S+)/',
+            '/(?<![\w-])(-p)(\S+)/',
             '$1[REDACTED]',
             $text,
         );
