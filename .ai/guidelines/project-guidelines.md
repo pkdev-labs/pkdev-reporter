@@ -5,7 +5,7 @@ A Laravel package installed into every site Phil owns. Reports telemetry (heartb
 
 ## Compatibility
 - PHP: 8.3+
-- Laravel: 11.x, 12.x, 13.x
+- Laravel: 12.x, 13.x
 
 ## Public Interface (what host apps interact with)
 1. `PKDEV_SITE_KEY` — optional env var, a key minted in the Ops panel. Without it the site generates `storage/app/pkdev-site.key` and enrolls through `POST /api/v1/enroll`

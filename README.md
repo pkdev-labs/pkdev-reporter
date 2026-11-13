@@ -7,7 +7,7 @@ Telemetry reporter for [PKDev](https://app.pkdev.dev) — sends heartbeats, queu
 ## Requirements
 
 - PHP 8.3+
-- Laravel 11, 12, or 13
+- Laravel 12 or 13
 
 ---
 

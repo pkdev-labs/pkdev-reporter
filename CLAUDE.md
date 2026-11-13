@@ -8,7 +8,7 @@ This is a CLEAN Composer package. No Filament, no AI integration, no project-spe
 3. `README.md` — public install + usage instructions
 
 ## Critical Constraints
-- Compatible with Laravel 11, 12, and 13. Stay within shared contracts.
+- Compatible with Laravel 12 and 13. Every Laravel 11 release carries security advisories Composer refuses to install. Stay within shared contracts.
 - Failures MUST NOT break the host site. Every HTTP call is wrapped in try/catch. `PkdevClient::post()` never throws.
 - Zero AI guidelines. Zero AI code. Clean package only.
 - Auto-discovery via `extra.laravel.providers`. Host adds two env vars and the package handles everything else.
