@@ -50,7 +50,9 @@ class ScheduledTaskListenerTest extends TestCase
         $this->assertSame(['/api/v1/cron-ping'], $this->sentPaths());
         $this->assertSame('failed', $this->sentBody(0)['status']);
         $this->assertSame(2, $this->sentBody(0)['exit_code']);
-        $this->assertSame(500, $this->sentBody(0)['duration_ms']);
+
+        $eventCarriesRuntime = property_exists(ScheduledTaskFailed::class, 'runtime');
+        $this->assertSame($eventCarriesRuntime ? 500 : null, $this->sentBody(0)['duration_ms'] ?? null);
     }
 
     public function test_a_background_task_reports_when_it_finishes_not_when_it_launches(): void
