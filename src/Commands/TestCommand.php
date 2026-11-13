@@ -4,6 +4,7 @@ namespace Pkdev\Reporter\Commands;
 
 use Illuminate\Console\Command;
 use Pkdev\Reporter\Http\PkdevClient;
+use Pkdev\Reporter\Support\SiteKey;
 
 class TestCommand extends Command
 {
@@ -14,7 +15,7 @@ class TestCommand extends Command
     public function handle(PkdevClient $client): int
     {
         $apiUrl  = config('pkdev-reporter.api_url');
-        $siteKey = config('pkdev-reporter.site_key');
+        $siteKey = SiteKey::current();
 
         $this->line('');
         $this->line('<fg=cyan>PKDev Reporter — Connection Test</>');
@@ -23,7 +24,7 @@ class TestCommand extends Command
         $this->line('');
 
         if (!$apiUrl || !$siteKey) {
-            $this->line('  <fg=red>✗ Config missing — run pkdev:install first</>');
+            $this->line('  <fg=red>✗ No hub URL or site key yet — run pkdev:report to generate a key and enroll</>');
             $this->line('');
             return self::FAILURE;
         }

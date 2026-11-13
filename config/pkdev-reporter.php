@@ -1,21 +1,10 @@
 <?php
 
 return [
-    /*
-     * Enable or disable all reporting. Set PKDEV_ENABLED=false to silence the package entirely.
-     */
-    'enabled' => env('PKDEV_ENABLED', true),
+    'enabled' => env('PKDEV_ENABLED', env('APP_ENV') === 'production'),
 
-    /*
-     * The PKDev hub API base URL.
-     * Local dev: http://host.docker.internal:8090 (if host site is in Sail)
-     * Production: https://app.pkdev.dev
-     */
-    'api_url' => env('PKDEV_API_URL'),
+    'api_url' => env('PKDEV_API_URL', 'https://app.pkdev.dev'),
 
-    /*
-     * The Bearer token for this site, generated in the PKDev Ops panel.
-     */
     'site_key' => env('PKDEV_SITE_KEY'),
 
     /*

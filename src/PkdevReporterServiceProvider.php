@@ -2,6 +2,7 @@
 
 namespace Pkdev\Reporter;
 
+use Illuminate\Console\Events\ScheduledBackgroundTaskFinished;
 use Illuminate\Console\Events\ScheduledTaskFailed;
 use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Scheduling\Schedule;
@@ -37,6 +38,7 @@ class PkdevReporterServiceProvider extends ServiceProvider
         if (config('pkdev-reporter.features.cron', true)) {
             Event::listen(ScheduledTaskFinished::class, [ScheduledTaskListener::class, 'handleFinished']);
             Event::listen(ScheduledTaskFailed::class,   [ScheduledTaskListener::class, 'handleFailed']);
+            Event::listen(ScheduledBackgroundTaskFinished::class, [ScheduledTaskListener::class, 'handleBackgroundFinished']);
         }
 
         if (config('pkdev-reporter.features.exceptions', true)) {

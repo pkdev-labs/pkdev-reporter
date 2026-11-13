@@ -4,6 +4,7 @@ namespace Pkdev\Reporter\Commands;
 
 use Illuminate\Console\Command;
 use Pkdev\Reporter\Http\PkdevClient;
+use Pkdev\Reporter\Support\SiteKey;
 
 class PingCommand extends Command
 {
@@ -18,8 +19,8 @@ class PingCommand extends Command
             return self::FAILURE;
         }
 
-        if (!config('pkdev-reporter.site_key')) {
-            $this->error('PKDEV_SITE_KEY is not set.');
+        if (SiteKey::current() === null) {
+            $this->error('No site key yet: set PKDEV_SITE_KEY, or let pkdev:report generate one and enroll.');
             return self::FAILURE;
         }
 

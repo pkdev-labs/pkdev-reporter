@@ -35,6 +35,14 @@ jobs:
 
           latest=$(git tag --list 'v*' --sort=-v:refname | head -n1)
           IFS=. read -r major minor patch <<< "${latest#v}"
-          next="v${major}.${minor}.$((patch + 1))"
+          title=$(git log -1 --format='%s%n%b' | head -n 2)
+
+          if grep -qF '[major]' <<< "$title"; then
+            next="v$((major + 1)).0.0"
+          elif grep -qF '[minor]' <<< "$title"; then
+            next="v${major}.$((minor + 1)).0"
+          else
+            next="v${major}.${minor}.$((patch + 1))"
+          fi
 
           gh release create "$next" --target "$GITHUB_SHA" --generate-notes

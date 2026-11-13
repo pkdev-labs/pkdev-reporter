@@ -29,7 +29,7 @@ class InstallCommand extends Command
 
         $apiUrl = $this->ask(
             'PKDev API URL',
-            $this->currentEnvValue($envPath, 'PKDEV_API_URL') ?: 'http://host.docker.internal:8090'
+            $this->currentEnvValue($envPath, 'PKDEV_API_URL') ?: 'https://app.pkdev.dev'
         );
 
         $siteKey = $this->secret('Site API key (from the PKDev Ops panel)');
@@ -51,13 +51,6 @@ class InstallCommand extends Command
         ]);
 
         $this->line('  <fg=green>✓</> .env updated');
-
-        // ── Publish config if not already published ───────────────────────
-
-        if (!file_exists(config_path('pkdev-reporter.php'))) {
-            $this->callSilent('vendor:publish', ['--tag' => 'pkdev-reporter-config']);
-            $this->line('  <fg=green>✓</> Config published to config/pkdev-reporter.php');
-        }
 
         // ── Test connectivity ─────────────────────────────────────────────
 
@@ -95,10 +88,7 @@ class InstallCommand extends Command
                 $this->line('');
                 $this->line("  <fg=cyan>require '{$recipePath}';</>");
                 $this->line('');
-                $this->line('  The recipe reads PKDEV_API_URL and PKDEV_SITE_KEY from your .env automatically.');
-                $this->line('  To override per-deploy, add before the require:');
-                $this->line('  <fg=cyan>set(\'pkdev_api_url\', \''.$apiUrl.'\');</>');
-                $this->line('  <fg=cyan>set(\'pkdev_site_key\', \'<your-site-key>\');  // use the value from your .env</>');
+                $this->line('  The recipe runs on the server, so it uses the same key as the site.');
                 $this->line('');
             }
 
