@@ -4,6 +4,7 @@ namespace Pkdev\Reporter\Commands;
 
 use Illuminate\Console\Command;
 use Pkdev\Reporter\Http\PkdevClient;
+use Pkdev\Reporter\Support\ScheduleInspector;
 use Pkdev\Reporter\Support\SiteKey;
 
 class TestCommand extends Command
@@ -14,7 +15,7 @@ class TestCommand extends Command
 
     public function handle(PkdevClient $client): int
     {
-        $apiUrl  = config('pkdev-reporter.api_url');
+        $apiUrl = config('pkdev-reporter.api_url');
         $siteKey = SiteKey::current();
 
         $this->line('');
@@ -26,40 +27,42 @@ class TestCommand extends Command
         if (!$apiUrl || !$siteKey) {
             $this->line('  <fg=red>✗ No hub URL or site key yet — run pkdev:report to generate a key and enroll</>');
             $this->line('');
+
             return self::FAILURE;
         }
 
         $checks = [
-            'Heartbeat'        => fn () => $client->post('/api/v1/heartbeat', [
+            'Heartbeat' => fn () => $client->post('/api/v1/heartbeat', [
                 'reported_at' => now()->utc()->toIso8601String(),
                 'environment' => config('app.env'),
-                'queues'      => [],
-                'horizon'     => null,
+                'queues' => [],
+                'horizon' => null,
+                'schedule' => app(ScheduleInspector::class)->entries(),
             ]),
-            'Cron ping'        => fn () => $client->post('/api/v1/cron-ping', [
+            'Cron ping' => fn () => $client->post('/api/v1/cron-ping', [
                 'command_name' => 'artisan pkdev:test',
-                'status'       => 'success',
-                'exit_code'    => 0,
-                'duration_ms'  => 1,
-                'fired_at'     => now()->utc()->toIso8601String(),
+                'status' => 'success',
+                'exit_code' => 0,
+                'duration_ms' => 1,
+                'fired_at' => now()->utc()->toIso8601String(),
             ]),
             'Exception report' => fn () => $client->post('/api/v1/exception', [
-                'class'       => 'Pkdev\Reporter\TestException',
-                'message'     => 'PKDev test — ignore this',
-                'file'        => 'pkdev:test',
-                'line'        => 0,
-                'trace'       => null,
+                'class' => 'Pkdev\Reporter\TestException',
+                'message' => 'PKDev test — ignore this',
+                'file' => 'pkdev:test',
+                'line' => 0,
+                'trace' => null,
                 'occurred_at' => now()->utc()->toIso8601String(),
             ]),
-            'Deployment'       => fn () => $client->post('/api/v1/deployment', [
-                'branch'         => 'test',
-                'commit'         => null,
+            'Deployment' => fn () => $client->post('/api/v1/deployment', [
+                'branch' => 'test',
+                'commit' => null,
                 'commit_message' => 'PKDev test — ignore this',
-                'deployer'       => 'pkdev:test',
-                'environment'    => config('app.env'),
-                'status'         => 'completed',
-                'duration_ms'    => 1,
-                'deployed_at'    => now()->utc()->toIso8601String(),
+                'deployer' => 'pkdev:test',
+                'environment' => config('app.env'),
+                'status' => 'completed',
+                'duration_ms' => 1,
+                'deployed_at' => now()->utc()->toIso8601String(),
             ]),
         ];
 

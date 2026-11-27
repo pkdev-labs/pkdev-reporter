@@ -6,6 +6,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
+use Pkdev\Reporter\Support\ScheduleInspector;
 use Pkdev\Reporter\Support\SiteKey;
 
 class PkdevClient
@@ -77,6 +78,7 @@ class PkdevClient
             'environment' => config('app.env'),
             'queues' => [],
             'horizon' => null,
+            'schedule' => app(ScheduleInspector::class)->entries(),
         ]);
     }
 
