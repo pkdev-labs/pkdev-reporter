@@ -8,6 +8,7 @@ use Illuminate\Console\Events\ScheduledTaskFinished;
 use Illuminate\Console\Scheduling\Event;
 use Pkdev\Reporter\Http\PkdevClient;
 use Pkdev\Reporter\Support\Redactor;
+use Pkdev\Reporter\Support\ScheduledCommandName;
 use Pkdev\Reporter\Support\SiteKey;
 
 class ScheduledTaskListener
@@ -47,9 +48,9 @@ class ScheduledTaskListener
     {
         if (!$this->shouldReport()) { return; }
 
-        $commandName = $this->extractCommandName($task);
+        $commandName = ScheduledCommandName::of($task);
 
-        if ($commandName === 'artisan pkdev:report') { return; }
+        if ($commandName === ScheduledCommandName::OWN_REPORT) { return; }
 
         try {
             app(PkdevClient::class)->post('/api/v1/cron-ping', array_filter([
@@ -63,18 +64,6 @@ class ScheduledTaskListener
         } catch (\Throwable) {
             // Never break the host app
         }
-    }
-
-    private function extractCommandName(Event $task): string
-    {
-        $summary = $task->getSummaryForDisplay();
-
-        // Extract "artisan <command>" from full shell string (e.g. "'/usr/bin/php' 'artisan' pkdev:report > ...")
-        if (preg_match("/artisan['\s]+([a-zA-Z0-9:_-]+)/", $summary, $m)) {
-            return 'artisan '.$m[1];
-        }
-
-        return mb_substr(Redactor::clean($summary), 0, 255);
     }
 
     private function shouldReport(): bool

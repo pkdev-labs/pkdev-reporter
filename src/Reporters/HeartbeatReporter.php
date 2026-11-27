@@ -5,6 +5,7 @@ namespace Pkdev\Reporter\Reporters;
 use Pkdev\Reporter\Http\PkdevClient;
 use Pkdev\Reporter\Support\HorizonInspector;
 use Pkdev\Reporter\Support\QueueInspector;
+use Pkdev\Reporter\Support\ScheduleInspector;
 
 class HeartbeatReporter
 {
@@ -12,6 +13,7 @@ class HeartbeatReporter
         private readonly PkdevClient $client,
         private readonly QueueInspector $queues,
         private readonly HorizonInspector $horizon,
+        private readonly ScheduleInspector $schedule,
     ) {}
 
     public function report(): bool
@@ -46,6 +48,7 @@ class HeartbeatReporter
                 $queueNames
             )),
             'horizon' => $this->horizon->status(),
+            'schedule' => $this->schedule->entries(),
         ];
     }
 }
