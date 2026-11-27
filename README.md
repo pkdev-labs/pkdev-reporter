@@ -33,9 +33,9 @@ Once installed, the package hooks into your application with zero additional cod
 
 | Feature | How |
 |---|---|
-| **Heartbeat + queue snapshot** | `pkdev:report` command scheduled every minute via the Laravel scheduler |
+| **Heartbeat + queue snapshot** | `pkdev:report` command scheduled every minute via the Laravel scheduler. Each heartbeat also lists the site's scheduled tasks, so PKDev notices a task that stops running |
 | **Cron monitoring** | Listens to the scheduler's finished, failed and background-finished events — every scheduled command reports one row per run, `success` or `failed`, including background tasks |
-| **Exception reporting** | Hooks into Laravel's exception handler via `reportable()` — unhandled exceptions are reported with class, message, file, line, and trace |
+| **Exception reporting** | Hooks into Laravel's exception handler via `reportable()` — unhandled exceptions are reported with class, message, file, line, and trace. In a web request the report is sent after the response, with a 2-second timeout |
 | **Deployment notifications** | Via the included [Deployer](https://deployer.org) recipe (optional) |
 
 ---

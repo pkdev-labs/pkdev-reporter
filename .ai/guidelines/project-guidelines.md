@@ -19,6 +19,7 @@ Everything else is automatic via ServiceProvider boot.
 ## What Auto-Registers on Boot
 When enabled (production by default):
 - Schedules `pkdev:report` every minute via the host's scheduler. It is the only code that writes the key file, so the file belongs to the scheduler's user
+- Each heartbeat carries the host's schedule: one `{ command, expression, timezone }` per task in this environment, named exactly as its cron pings are (`ScheduledCommandName`), so the hub can tell when a task stops running. Unnamed closures and `pkdev:report` are left out
 - Listens to `ScheduledTaskFinished`, `ScheduledTaskFailed` and `ScheduledBackgroundTaskFinished`, and never reports `pkdev:report` itself
 - Hooks the exception handler via `reportable()` callback
 
@@ -26,10 +27,12 @@ When enabled (production by default):
 The host site's stability takes priority over PKDev reporting. Rules:
 - All HTTP calls go through `PkdevClient` — `send()` returns the status code or null, `post()` returns bool, and neither throws. Only transport failures and 5xx are retried; a 4xx is final.
 - If PKDev is unreachable, the host continues normally. The only sign of failure is a log warning prefixed with `[pkdev/reporter]`.
-- Timeout: 5 seconds. Retries: 2x with exponential backoff. Total worst case: ~7.5 seconds per call — acceptable for background/queued contexts, not for request lifecycle. Exception reports are async-safe (called from exception handler, not middleware).
+- Heartbeats and deploy notices: `http_timeout` 5 seconds, `http_retries` 2, backoff doubling from `http_retry_delay_ms` (500ms). Worst case about 16.5 seconds (5s × 3 attempts, plus 0.5s and 1s of backoff). They run from the scheduler in the background or from a deploy, never inside a web request.
+- Exceptions: `exception_timeout` 2 seconds, `exception_retries` 1. Worst case about 4.5 seconds (2s × 2 attempts, plus 0.5s of backoff). In a web request the post is queued on `app()->terminating()` and runs after the response is sent, so the visitor never waits, though the PHP worker is held until it finishes. Console commands and queue jobs send at once, inside the command or job.
+- A cache outage skips the exception dedupe, and the report still goes.
 
 ## Recursion Guard
-`ExceptionReporter` must not report its own exceptions back to PKDev. Guard: skip any exception whose class or file path contains `Pkdev\Reporter` or `pkdev/reporter`.
+`ExceptionReporter` must not report its own exceptions back to PKDev. Guard: skip any exception whose class name starts with `Pkdev\Reporter\`. The file path is not checked: an exception of another class raised inside the package, such as a Guzzle error, would pass the guard, and `PkdevClient` catching every throwable is what keeps it from looping.
 
 ## Out of Scope
 - No UI (no routes, no Blade views)
