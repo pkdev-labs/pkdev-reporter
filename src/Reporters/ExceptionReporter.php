@@ -25,14 +25,39 @@ class ExceptionReporter
         try {
             if ($this->isDuplicate($exception)) { return; }
 
-            $this->client->post('/api/v1/exception', [
+            $payload = [
                 'class' => get_class($exception),
                 'message' => mb_strcut(Redactor::clean($exception->getMessage()), 0, 5000),
                 'file' => $exception->getFile(),
                 'line' => $exception->getLine(),
                 'trace' => Redactor::clean(mb_substr($exception->getTraceAsString(), 0, 5000)),
                 'occurred_at' => now()->utc()->toIso8601String(),
-            ]);
+            ];
+
+            if (app()->runningInConsole()) {
+                $this->send($payload);
+
+                return;
+            }
+
+            app()->terminating(fn () => $this->send($payload));
+        } catch (\Throwable) {
+            // Never break the host app
+        }
+    }
+
+    /**
+     * Exceptions use their own short timeout and retries, so a slow hub holds a request or job for seconds, not tens of them.
+     */
+    private function send(array $payload): void
+    {
+        try {
+            $this->client->post(
+                '/api/v1/exception',
+                $payload,
+                timeout: (float) config('pkdev-reporter.exception_timeout', 2),
+                retries: (int) config('pkdev-reporter.exception_retries', 1),
+            );
         } catch (\Throwable) {
             // Never break the host app
         }

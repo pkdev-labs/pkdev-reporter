@@ -13,14 +13,15 @@ class PkdevClient
     /**
      * POST to the hub and return its status code, or null when it could not be reached.
      * Retries transport failures and 5xx only. Never throws.
+     * A null timeout or retries falls back to http_timeout and http_retries.
      */
-    public function send(string $endpoint, array $payload): ?int
+    public function send(string $endpoint, array $payload, ?float $timeout = null, ?int $retries = null): ?int
     {
-        $retries = (int) config('pkdev-reporter.http_retries', 2);
+        $retries ??= (int) config('pkdev-reporter.http_retries', 2);
         $delay = (int) config('pkdev-reporter.http_retry_delay_ms', 500);
 
         try {
-            $options = $this->requestOptions($payload);
+            $options = $this->requestOptions($payload, $timeout ?? (float) config('pkdev-reporter.http_timeout', 5));
         } catch (\Throwable $exception) {
             Log::warning('[pkdev/reporter] Could not encode the payload for '.$endpoint.': '.$exception->getMessage());
 
@@ -56,9 +57,9 @@ class PkdevClient
      * POST payload to the PKDev API endpoint.
      * Never throws — logs failures and returns false.
      */
-    public function post(string $endpoint, array $payload): bool
+    public function post(string $endpoint, array $payload, ?float $timeout = null, ?int $retries = null): bool
     {
-        $status = $this->send($endpoint, $payload);
+        $status = $this->send($endpoint, $payload, $timeout, $retries);
 
         if ($status !== null && $status >= 200 && $status < 300) { return true; }
 
@@ -79,7 +80,7 @@ class PkdevClient
         ]);
     }
 
-    private function requestOptions(array $payload): array
+    private function requestOptions(array $payload, float $timeout): array
     {
         $key = (string) SiteKey::current();
         $body = json_encode($payload, JSON_THROW_ON_ERROR);
@@ -87,7 +88,7 @@ class PkdevClient
         return [
             'body' => $body,
             'http_errors' => false,
-            'timeout' => config('pkdev-reporter.http_timeout', 5),
+            'timeout' => $timeout,
             'headers' => [
                 'Authorization' => 'Bearer '.$key,
                 'Accept' => 'application/json',

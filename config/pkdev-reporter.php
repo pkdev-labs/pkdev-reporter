@@ -21,11 +21,17 @@ return [
     'http_retry_delay_ms' => 500,
 
     /*
+     * Exception reports only. In a web request they are sent after the response.
+     */
+    'exception_timeout' => 2,
+    'exception_retries' => 1,
+
+    /*
      * Feature toggles — disable individual features without removing the package.
      */
     'features' => [
-        'heartbeat'  => env('PKDEV_FEATURE_HEARTBEAT', true),
-        'cron'       => env('PKDEV_FEATURE_CRON', true),
+        'heartbeat' => env('PKDEV_FEATURE_HEARTBEAT', true),
+        'cron' => env('PKDEV_FEATURE_CRON', true),
         'exceptions' => env('PKDEV_FEATURE_EXCEPTIONS', true),
     ],
 ];
